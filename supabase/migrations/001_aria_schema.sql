@@ -1,0 +1,24 @@
+-- ARIA Database Schema Migration
+--
+-- This file will contain the complete ARIA database schema including:
+-- - User profiles and preferences
+-- - Conversation history
+-- - Memory/knowledge base with vector embeddings
+-- - Task management
+-- - File metadata
+-- - System configuration
+--
+-- PLACEHOLDER: Schema SQL to be provided separately
+--
+-- Expected tables:
+-- - aria_users: User profiles and settings
+-- - aria_conversations: Conversation sessions
+-- - aria_messages: Individual messages within conversations
+-- - aria_memories: Long-term memory store with embeddings
+-- - aria_tasks: Task/todo management
+-- - aria_files: Uploaded file metadata
+-- - aria_embeddings: Vector embeddings for semantic search
+--
+-- Required extensions:
+-- - pgvector: For vector similarity search
+-- - pg_trgm: For fuzzy text matching

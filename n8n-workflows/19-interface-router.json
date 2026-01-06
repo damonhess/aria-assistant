@@ -1,0 +1,16 @@
+{
+  "_comment": "ARIA Interface Router Workflow",
+  "_description": "Central routing hub that receives requests from all interfaces (Telegram, Web, Voice) and directs them to appropriate processing workflows.",
+  "_placeholder": true,
+  "_features": [
+    "Multi-interface request normalization",
+    "Intent classification",
+    "Workflow routing logic",
+    "Priority queue management",
+    "Rate limiting",
+    "Response aggregation"
+  ],
+  "name": "19 - ARIA Interface Router",
+  "nodes": [],
+  "connections": {}
+}

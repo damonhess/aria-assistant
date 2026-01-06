@@ -1,0 +1,16 @@
+{
+  "_comment": "ARIA Memory Consolidator Workflow",
+  "_description": "Scheduled workflow that consolidates conversation history, extracts key insights, and updates long-term memory store.",
+  "_placeholder": true,
+  "_features": [
+    "Conversation summarization",
+    "Key fact extraction",
+    "Entity recognition and linking",
+    "Memory deduplication",
+    "Importance scoring",
+    "Scheduled consolidation runs"
+  ],
+  "name": "20 - ARIA Memory Consolidator",
+  "nodes": [],
+  "connections": {}
+}

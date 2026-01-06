@@ -1,0 +1,28 @@
+# ARIA Docker Compose Configuration
+# Future container definitions for aria-web and related services
+
+version: '3.8'
+
+services:
+  # aria-web:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: aria-web
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - VITE_API_URL=${VITE_API_URL}
+  #     - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+  #     - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+  #   restart: unless-stopped
+  #   networks:
+  #     - aria-network
+
+  # Placeholder for future services:
+  # - aria-api: Backend API service
+  # - aria-worker: Background job processor
+
+networks:
+  aria-network:
+    driver: bridge

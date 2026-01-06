@@ -1,0 +1,16 @@
+{
+  "_comment": "ARIA File Processor Workflow",
+  "_description": "Processes uploaded files (documents, images, audio) by extracting content, generating embeddings, and storing in Supabase.",
+  "_placeholder": true,
+  "_features": [
+    "PDF text extraction",
+    "Image OCR processing",
+    "Audio transcription",
+    "Content chunking for embeddings",
+    "Vector embedding generation",
+    "Supabase storage integration"
+  ],
+  "name": "18 - ARIA File Processor",
+  "nodes": [],
+  "connections": {}
+}

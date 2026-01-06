@@ -1,0 +1,16 @@
+{
+  "_comment": "ARIA Conversation Manager Workflow",
+  "_description": "Manages active conversations, maintains context windows, retrieves relevant memories, and coordinates LLM interactions.",
+  "_placeholder": true,
+  "_features": [
+    "Context window management",
+    "Memory retrieval (RAG)",
+    "Conversation state tracking",
+    "Multi-turn dialogue handling",
+    "System prompt injection",
+    "Response generation coordination"
+  ],
+  "name": "21 - ARIA Conversation Manager",
+  "nodes": [],
+  "connections": {}
+}

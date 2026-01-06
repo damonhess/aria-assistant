@@ -1,0 +1,16 @@
+{
+  "_comment": "ARIA Telegram Interface Workflow",
+  "_description": "Handles incoming Telegram messages, routes them through ARIA's processing pipeline, and sends responses back to users.",
+  "_placeholder": true,
+  "_features": [
+    "Telegram webhook listener",
+    "Message parsing and intent detection",
+    "User authentication/authorization",
+    "Response formatting for Telegram",
+    "Media file handling",
+    "Inline keyboard support"
+  ],
+  "name": "17 - ARIA Telegram Interface",
+  "nodes": [],
+  "connections": {}
+}

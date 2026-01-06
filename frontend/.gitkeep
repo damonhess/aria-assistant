@@ -1,0 +1,16 @@
+# Placeholder for Bolt.new frontend export
+#
+# This directory will contain the React/Vite frontend application
+# exported from Bolt.new once the UI design is complete.
+#
+# Expected structure after export:
+# frontend/
+# ├── src/
+# │   ├── components/
+# │   ├── pages/
+# │   ├── hooks/
+# │   └── App.tsx
+# ├── public/
+# ├── package.json
+# ├── vite.config.ts
+# └── tsconfig.json
