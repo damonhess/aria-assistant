@@ -16,7 +16,7 @@
 **Time:** 15-30 minutes
 
 ### 2. ~~Add Tool Schemas~~ ✅ COMPLETED (January 12, 2026)
-**Status:** 12/13 tools now have schemas (92% coverage)
+**Status:** 13/13 tools now have schemas (100% coverage)
 
 **Added schemas for:**
 - `search_memory` - query, limit, min_confidence, types[]
@@ -24,8 +24,7 @@
 - `task_analytics` - time_range, metric_type, include_details
 - `get_launch_status` - show_details, include_risks, format
 - `cbt_therapist` - message, mode (analysis/support/challenge/reframe), context
-
-**Remaining:** `find_test_events` (1 tool, low priority)
+- `find_test_events` - pattern, days_back, days_forward
 
 **Location:** Updated in `workflow_entity` and `workflow_history` for workflow ID `aX8d9zWniCYaIDwc`
 
