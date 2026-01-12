@@ -1,6 +1,6 @@
 # ARIA Knowledge Base - Lessons Learned & Solutions
 
-*Last Updated: January 12, 2026 (Added Sections 8-9: AI Agent Tool Registration, ARIA Schema)*
+*Last Updated: January 12, 2026 (Added Section 10: Conversation Deletion & Cleanup)*
 
 This document captures hard-won knowledge from debugging sessions. Use it to avoid repeating mistakes and to quickly solve recurring issues.
 
@@ -17,6 +17,7 @@ This document captures hard-won knowledge from debugging sessions. Use it to avo
 7. [pairedItem Errors in Code Nodes](#7-paireditem-errors-in-code-nodes)
 8. [n8n AI Agent Tool Registration](#8-n8n-ai-agent-tool-registration)
 9. [ARIA Database Schema Conventions](#9-aria-database-schema-conventions)
+10. [Conversation Deletion & Cleanup](#10-conversation-deletion--cleanup)
 
 ---
 
@@ -579,6 +580,85 @@ The ARIA frontend (`/home/damon/aria-assistant/frontend`) uses these tables dire
 - "Column does not exist" errors
 - Workflows that worked before fail after "fixes"
 - Frontend and backend see different data
+
+---
+
+## 10. Conversation Deletion & Cleanup
+
+### How Conversation Deletion Works (as of Jan 12, 2026)
+
+ARIA uses **soft delete** for conversations:
+- Frontend sets `is_archived = true` instead of deleting
+- Archived conversations are filtered from the UI
+- Data remains in database for potential recovery
+
+### Database Cascade Behavior
+
+| Table | On Conversation Delete | On Message Delete |
+|-------|----------------------|-------------------|
+| `aria_messages` | CASCADE | N/A |
+| `aria_attachments` | CASCADE (via message) | CASCADE |
+| `aria_interface_sync` | CASCADE (via message) | CASCADE |
+| `aria_unified_memory` | SET NULL | SET NULL |
+| `tasks` | SET NULL | N/A |
+| `decisions` | SET NULL | N/A |
+
+### n8n Chat Memory Cleanup
+
+The n8n AI Agent uses Postgres Chat Memory which stores messages in `n8n_chat_histories` table. When a conversation is archived/deleted in ARIA, this table is NOT automatically cleaned.
+
+**Session ID Format:** The `session_id` in n8n matches the `conversation_id` from ARIA.
+
+**Manual Cleanup Query:**
+```sql
+-- Run in n8n-postgres container
+-- Find orphaned chat histories
+SELECT DISTINCT "sessionId"
+FROM n8n_chat_histories
+WHERE "sessionId" NOT IN (
+  SELECT id::text FROM aria_conversations WHERE is_archived = false
+);
+
+-- Delete orphaned chat histories
+DELETE FROM n8n_chat_histories
+WHERE "sessionId" NOT IN (
+  SELECT id::text FROM aria_conversations WHERE is_archived = false
+);
+```
+
+**Note:** This requires cross-database access. The n8n database is separate from Supabase. Consider creating a scheduled n8n workflow for automated cleanup.
+
+### Storage Bucket Cleanup
+
+Attachment files in Supabase Storage (`chat-files` bucket) are NOT automatically deleted when conversations are archived. This requires:
+1. Supabase Edge Function to delete files, OR
+2. n8n workflow to clean orphaned files
+
+**Find orphaned files:**
+```sql
+-- Files in storage but not in aria_attachments
+-- Requires Supabase Storage API access
+```
+
+### Recovery Process
+
+To recover a soft-deleted conversation:
+```sql
+-- In Supabase
+UPDATE aria_conversations
+SET is_archived = false, updated_at = NOW()
+WHERE id = 'CONVERSATION_UUID';
+```
+
+### Hard Delete (Permanent)
+
+If permanent deletion is required:
+```sql
+-- WARNING: This is irreversible
+DELETE FROM aria_conversations WHERE id = 'CONVERSATION_UUID';
+-- Messages and attachments cascade automatically
+-- unified_memory references become NULL
+```
 
 ---
 
