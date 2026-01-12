@@ -26,7 +26,7 @@ export interface FileAttachment {
   id: string;
   message_id: string;
   filename: string;
-  file_path: string;
+  storage_path: string;
   file_size: number;
   file_type: string;
   created_at: string;

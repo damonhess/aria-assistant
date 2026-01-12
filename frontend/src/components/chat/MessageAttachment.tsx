@@ -35,7 +35,7 @@ export function MessageAttachment({ file }: MessageAttachmentProps) {
   const handleDownload = async () => {
     const { data } = await supabase.storage
       .from('chat-files')
-      .download(file.file_path);
+      .download(file.storage_path);
 
     if (data) {
       const url = URL.createObjectURL(data);
@@ -52,7 +52,7 @@ export function MessageAttachment({ file }: MessageAttachmentProps) {
 
     const { data } = await supabase.storage
       .from('chat-files')
-      .getPublicUrl(file.file_path);
+      .getPublicUrl(file.storage_path);
 
     setImageUrl(data.publicUrl);
     setImageOpen(true);
@@ -66,7 +66,7 @@ export function MessageAttachment({ file }: MessageAttachmentProps) {
           onClick={handleImageClick}
         >
           <img
-            src={supabase.storage.from('chat-files').getPublicUrl(file.file_path).data.publicUrl}
+            src={supabase.storage.from('chat-files').getPublicUrl(file.storage_path).data.publicUrl}
             alt={file.filename}
             className="w-full h-auto max-h-64 object-cover"
           />

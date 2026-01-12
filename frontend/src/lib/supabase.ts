@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type Database = {
   public: {
     Tables: {
-      conversations: {
+      aria_conversations: {
         Row: {
           id: string;
           user_id: string;
@@ -35,7 +35,7 @@ export type Database = {
           updated_at?: string;
         };
       };
-      messages: {
+      aria_messages: {
         Row: {
           id: string;
           conversation_id: string;
@@ -58,12 +58,12 @@ export type Database = {
           created_at?: string;
         };
       };
-      files: {
+      aria_attachments: {
         Row: {
           id: string;
           message_id: string;
           filename: string;
-          file_path: string;
+          storage_path: string;
           file_size: number;
           file_type: string;
           created_at: string;
@@ -72,7 +72,7 @@ export type Database = {
           id?: string;
           message_id: string;
           filename: string;
-          file_path: string;
+          storage_path: string;
           file_size?: number;
           file_type?: string;
           created_at?: string;
@@ -81,7 +81,7 @@ export type Database = {
           id?: string;
           message_id?: string;
           filename?: string;
-          file_path?: string;
+          storage_path?: string;
           file_size?: number;
           file_type?: string;
           created_at?: string;

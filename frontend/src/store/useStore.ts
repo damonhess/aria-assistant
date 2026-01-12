@@ -123,7 +123,7 @@ export const useStore = create<Store>((set, get) => ({
     }));
 
     const { data, error } = await supabase
-      .from('conversations')
+      .from('aria_conversations')
       .select('*')
       .order('updated_at', { ascending: false });
 
@@ -159,7 +159,7 @@ export const useStore = create<Store>((set, get) => ({
     if (!auth.user) return null;
 
     const { data, error } = await supabase
-      .from('conversations')
+      .from('aria_conversations')
       .insert({
         user_id: auth.user.id,
         title,
@@ -186,7 +186,7 @@ export const useStore = create<Store>((set, get) => ({
 
   deleteConversation: async (id: string) => {
     const { error } = await supabase
-      .from('conversations')
+      .from('aria_conversations')
       .delete()
       .eq('id', id);
 
@@ -215,7 +215,7 @@ export const useStore = create<Store>((set, get) => ({
 
   updateConversationTitle: async (id: string, title: string) => {
     const { error } = await supabase
-      .from('conversations')
+      .from('aria_conversations')
       .update({ title, updated_at: new Date().toISOString() })
       .eq('id', id);
 
@@ -240,7 +240,7 @@ export const useStore = create<Store>((set, get) => ({
 
   loadMessages: async (conversationId: string) => {
     const { data: messages, error: messagesError } = await supabase
-      .from('messages')
+      .from('aria_messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
@@ -252,7 +252,7 @@ export const useStore = create<Store>((set, get) => ({
     }
 
     const { data: files, error: filesError } = await supabase
-      .from('files')
+      .from('aria_attachments')
       .select('*')
       .in('message_id', messages?.map((m) => m.id) || []);
 
@@ -293,7 +293,7 @@ export const useStore = create<Store>((set, get) => ({
     }));
 
     const { data: userMessage, error: messageError } = await supabase
-      .from('messages')
+      .from('aria_messages')
       .insert({
         conversation_id: conversationId,
         role: 'user',
@@ -323,10 +323,10 @@ export const useStore = create<Store>((set, get) => ({
           continue;
         }
 
-        await supabase.from('files').insert({
+        await supabase.from('aria_attachments').insert({
           message_id: userMessage.id,
           filename: file.name,
-          file_path: filePath,
+          storage_path: filePath,
           file_size: file.size,
           file_type: file.type,
         });
@@ -341,7 +341,7 @@ export const useStore = create<Store>((set, get) => ({
     }
 
     await supabase
-      .from('conversations')
+      .from('aria_conversations')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', conversationId);
 
@@ -374,7 +374,7 @@ export const useStore = create<Store>((set, get) => ({
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const { error: aiError } = await supabase
-      .from('messages')
+      .from('aria_messages')
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
