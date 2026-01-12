@@ -2,8 +2,8 @@
 
 **Workflow:** Personal Assistant - AI Agent Main
 **Workflow ID:** aX8d9zWniCYaIDwc
-**Audit Date:** 2026-01-06 (Updated: 2026-01-12)
-**Total Tools:** 15
+**Audit Date:** 2026-01-06 (Updated: 2026-01-12 late evening)
+**Total Tools:** 13
 
 ---
 
@@ -11,13 +11,19 @@
 
 | Status | Count | Tools |
 |--------|-------|-------|
-| With Schema | 15 | store_memory, search_memory, context_manager, manage_tasks, task_analytics, decision_tracker, calendar_read, calendar_write, get_launch_status, launch_timeline_manager, cbt_therapist, n8n_troubleshooter, find_test_events, pattern_detection, context_summarizer |
+| With Schema | 13 | store_memory, search_memory, context_manager, manage_tasks, task_analytics, decision_tracker, calendar_read, calendar_write, get_launch_status, launch_timeline_manager, cbt_therapist, pattern_detection, context_summarizer |
 | Missing Schema | 0 | None |
 | Broken Workflows | 0 | All workflows exist and are accessible |
 
 **UPDATE 2026-01-06:** Added schemas to `store_memory` and `calendar_write` (critical tools).
 
-**UPDATE 2026-01-12:** Added schemas to all remaining tools. Schema coverage now at 100%.
+**UPDATE 2026-01-12 (evening):** Added schemas to all remaining tools. Schema coverage now at 100%.
+
+**UPDATE 2026-01-12 (late evening):**
+- **Removed:** `n8n_troubleshooter` (security decision - direct n8n management by AI poses risks; tool available via MCP server)
+- **Removed:** `find_test_events` (not needed - calendar delete functionality to be upgraded in future)
+- **Fixed:** `pattern_detection` - Rebuilt with real analysis logic (queries tasks/decisions tables, calculates metrics)
+- **Fixed:** `context_summarizer` - Fixed database schema to use `aria_conversations` + `aria_messages` instead of legacy tables
 
 ---
 
@@ -302,7 +308,7 @@ Add these schemas to the respective tool nodes in `ai-agent-main.json`:
 - [x] Add `cbt_therapist` schema
 
 ### Remaining ✅ ALL COMPLETE
-- [x] Add `find_test_events` schema
+- [x] Add `find_test_events` schema (tool later removed)
 
 ---
 
@@ -344,29 +350,35 @@ For each tool in `ai-agent-main.json`, add these properties to the tool node:
 
 | Metric | Value |
 |--------|-------|
-| Total Tools | 15 |
-| With Schemas | 15 (100%) |
+| Total Tools | 13 |
+| With Schemas | 13 (100%) |
 | Missing Schemas | 0 (0%) |
 | Broken Workflows | 0 (0%) |
 | Active Workflows | All confirmed |
 | Schema Coverage Target | 100% ✅ ACHIEVED |
 
-**Risk Level:** NONE - All tools have schemas.
+**Risk Level:** NONE - All tools have schemas and are functional.
 
 **Completed 2026-01-06:**
 - Added schema to `store_memory`
 - Added schema to `calendar_write`
 
-**Completed 2026-01-12:**
+**Completed 2026-01-12 (evening):**
 - Added schema to `search_memory`
 - Added schema to `context_manager`
 - Added schema to `task_analytics`
 - Added schema to `get_launch_status`
 - Added schema to `cbt_therapist`
 - Added schema to `calendar_read`
-- Added schema to `n8n_troubleshooter`
-- Added schema to `find_test_events`
+- Added schema to `n8n_troubleshooter` (later removed)
+- Added schema to `find_test_events` (later removed)
 - Added schema to `pattern_detection` (converted from scheduled to on-demand tool)
 - Added schema to `context_summarizer` (converted from scheduled to on-demand tool)
 
-**Status:** COMPLETE - 100% schema coverage achieved (15/15 tools).
+**Completed 2026-01-12 (late evening):**
+- Removed `n8n_troubleshooter` (security - AI shouldn't have direct n8n control)
+- Removed `find_test_events` (not needed, future calendar upgrade planned)
+- Fixed `pattern_detection` with real analysis logic
+- Fixed `context_summarizer` to use ARIA database schema
+
+**Status:** COMPLETE - 100% schema coverage achieved (13/13 tools). All tools functional.

@@ -1,6 +1,6 @@
 # ARIA Knowledge Base - Lessons Learned & Solutions
 
-*Last Updated: January 12, 2026*
+*Last Updated: January 12, 2026 (Added Sections 8-9: AI Agent Tool Registration, ARIA Schema)*
 
 This document captures hard-won knowledge from debugging sessions. Use it to avoid repeating mistakes and to quickly solve recurring issues.
 
@@ -15,6 +15,8 @@ This document captures hard-won knowledge from debugging sessions. Use it to avo
 5. [HTTP Request Node Authentication](#5-http-request-node-authentication)
 6. [Batch Deletion of Same-Named Events](#6-batch-deletion-of-same-named-events)
 7. [pairedItem Errors in Code Nodes](#7-paireditem-errors-in-code-nodes)
+8. [n8n AI Agent Tool Registration](#8-n8n-ai-agent-tool-registration)
+9. [ARIA Database Schema Conventions](#9-aria-database-schema-conventions)
 
 ---
 
@@ -366,6 +368,217 @@ return items.map((item, index) => ({
 - Error appears in nodes AFTER the Code node, not in the Code node itself
 - Error mentions a node earlier in the workflow
 - Error only occurs during execution, not in test runs
+
+---
+
+## 8. n8n AI Agent Tool Registration
+
+### The Problem
+A tool workflow exists and has an Execute Workflow Trigger, but the AI Agent doesn't see or use it. The tool doesn't appear in testing and never gets called.
+
+### Root Cause
+n8n AI Agent requires tools to be registered in **TWO separate places**:
+
+1. **Tool: X Node** - A `@n8n/n8n-nodes-langchain.toolWorkflow` node connected to the AI Agent's `ai_tool` input
+2. **Tools Array Entry** - An entry in the AI Agent's `parameters.tools` object with the tool's name and description
+
+If EITHER is missing, the tool won't work:
+- Missing toolWorkflow node = No physical connection to call the workflow
+- Missing tools array entry = AI doesn't know the tool exists
+
+### The Fix
+
+**Step 1: Create the toolWorkflow Node**
+
+```json
+{
+  "id": "tool-your-tool-name",
+  "name": "Tool: Your Tool Name",
+  "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+  "position": [1350, 800],
+  "parameters": {
+    "name": "your_tool_name",
+    "description": "Description of what this tool does",
+    "workflowId": "YOUR_WORKFLOW_ID"
+  },
+  "typeVersion": 1.1
+}
+```
+
+**Step 2: Add Connection to AI Agent**
+
+```json
+{
+  "Tool: Your Tool Name": {
+    "ai_tool": [[{"node": "AI Agent", "type": "ai_tool", "index": 0}]]
+  }
+}
+```
+
+**Step 3: Add Entry to AI Agent's tools Array**
+
+In the AI Agent node's parameters:
+```json
+{
+  "parameters": {
+    "tools": {
+      "values": [
+        {
+          "type": "tool",
+          "value": {
+            "name": "your_tool_name",
+            "description": "Description of what this tool does and when to use it"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### Additional Requirements
+
+**Project Membership**: Tool workflows must either:
+- Be in the same project as the AI Agent workflow
+- Have `callerPolicy: "any"` to allow cross-project calls
+
+**workflow_history Sync**: After adding via SQL, ensure workflow_history is updated (see Section 1)
+
+```sql
+-- Add to workflow_history with required columns
+INSERT INTO workflow_history (
+    "workflowId", "versionId", nodes, connections, settings,
+    "createdAt", "updatedAt", authors, autosaved
+)
+VALUES (
+    'WORKFLOW_ID',
+    gen_random_uuid()::text,
+    'NODES_JSON',
+    'CONNECTIONS_JSON',
+    '{"executionOrder":"v1"}'::jsonb,
+    NOW(), NOW(),
+    'Claude Code',  -- authors column required
+    false           -- autosaved column required
+);
+```
+
+### Verification Checklist
+
+```sql
+-- 1. Check AI Agent has the tool in its nodes (toolWorkflow exists)
+SELECT nodes::text LIKE '%Tool: Your Tool Name%' as has_tool_node
+FROM workflow_entity WHERE id = 'AI_AGENT_WORKFLOW_ID';
+
+-- 2. Check AI Agent has the tool in its parameters.tools
+SELECT nodes::text LIKE '%"your_tool_name"%' as has_tools_entry
+FROM workflow_entity WHERE id = 'AI_AGENT_WORKFLOW_ID';
+
+-- 3. Check tool workflow exists
+SELECT id, name, active FROM workflow_entity
+WHERE name LIKE '%Your Tool%';
+
+-- 4. Check tool workflow has execute trigger
+SELECT nodes::text LIKE '%executeWorkflowTrigger%' as has_trigger
+FROM workflow_entity WHERE id = 'TOOL_WORKFLOW_ID';
+```
+
+### Symptoms of This Issue
+- Tool workflow exists but AI never calls it
+- AI says "I don't have a tool for that" for functionality that exists
+- Tool appears in n8n UI but not in AI Agent's tool list
+- Adding Execute Workflow Trigger alone doesn't make tool available
+
+---
+
+## 9. ARIA Database Schema Conventions
+
+### The Problem
+Workflows query wrong tables or use wrong column names, causing SQL errors or empty results.
+
+### ARIA Table Naming Convention
+All ARIA-specific tables use the `aria_` prefix:
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `aria_conversations` | Chat conversations | `id`, `title`, `created_at`, `updated_at` |
+| `aria_messages` | Individual messages | `id`, `conversation_id`, `role`, `content`, `created_at` |
+| `aria_attachments` | File attachments | `id`, `message_id`, `filename`, `file_path`, `mime_type` |
+| `aria_unified_memory` | Persistent memory | `id`, `memory_type`, `content`, `source_conversation_id`, `confidence`, `is_active` |
+
+### Common Mistakes
+
+**Wrong:** Using legacy table names
+```sql
+-- DON'T: Old schema
+SELECT * FROM conversations WHERE session_id = '...';
+SELECT * FROM memory WHERE type = 'summary';
+```
+
+**Right:** Using ARIA tables
+```sql
+-- DO: ARIA schema
+SELECT * FROM aria_conversations WHERE id = '...';
+SELECT * FROM aria_unified_memory WHERE memory_type = 'summary';
+```
+
+### Message Role Values
+The `aria_messages.role` column uses standard values:
+- `user` - Human user messages
+- `assistant` - AI responses
+- `system` - System prompts/context
+
+### Joining Conversations and Messages
+```sql
+SELECT
+    c.id as conversation_id,
+    c.title,
+    COUNT(m.id) as message_count,
+    MIN(m.created_at) as started,
+    MAX(m.created_at) as last_activity
+FROM aria_conversations c
+JOIN aria_messages m ON m.conversation_id = c.id
+GROUP BY c.id, c.title
+ORDER BY MAX(m.created_at) DESC;
+```
+
+### Storing Memory/Summaries
+```sql
+INSERT INTO aria_unified_memory (
+    memory_type,
+    content,
+    source_conversation_id,
+    confidence,
+    is_active
+)
+VALUES (
+    'summary',
+    '{"title": "...", "summary": "...", "key_points": [...]}',
+    'CONVERSATION_UUID',
+    1.0,
+    true
+);
+```
+
+### Verification Query
+```sql
+-- Check ARIA tables exist with correct schema
+SELECT table_name, column_name, data_type
+FROM information_schema.columns
+WHERE table_name LIKE 'aria_%'
+ORDER BY table_name, ordinal_position;
+```
+
+### Frontend-Database Alignment
+The ARIA frontend (`/home/damon/aria-assistant/frontend`) uses these tables directly. When modifying schemas:
+1. Check frontend TypeScript types in `lib/supabase/types.ts`
+2. Ensure migrations match frontend expectations
+3. Test both frontend and n8n workflows after changes
+
+### Symptoms of This Issue
+- SQL queries return empty results when data exists
+- "Column does not exist" errors
+- Workflows that worked before fail after "fixes"
+- Frontend and backend see different data
 
 ---
 

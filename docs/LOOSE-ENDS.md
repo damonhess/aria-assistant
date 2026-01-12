@@ -1,6 +1,36 @@
 # ARIA - Loose Ends & Immediate Priorities
 
-*Last Updated: January 12, 2026*
+*Last Updated: January 12, 2026 (late evening - tool registration fixes)*
+
+---
+
+## Recent Session Accomplishments
+
+### January 12, 2026 (Late Evening) - Tool Registration & Schema Fixes
+- **Pattern Detection Tool**: Rebuilt with real analysis logic
+  - Now queries `tasks` and `decisions` tables
+  - Calculates completion rates, procrastination scores, overdue analysis
+  - Returns formatted markdown with actionable insights
+- **Context Summarizer Tool**: Fixed database schema
+  - Changed from legacy `conversations` table to `aria_conversations` + `aria_messages`
+  - Now correctly joins ARIA tables for summarization
+- **find_test_events Tool**: Removed (user confirmed not needed)
+  - Calendar delete functionality to be upgraded in future sessions
+- **KNOWLEDGE-BASE.md**: Added two new sections
+  - Section 8: n8n AI Agent Tool Registration (TWO places requirement)
+  - Section 9: ARIA Database Schema Conventions (aria_* tables)
+- **Key Lesson Documented**: Tools require BOTH:
+  1. Tool: X node with ai_tool connection to AI Agent
+  2. Entry in AI Agent's parameters.tools array
+
+### January 12, 2026 (Evening)
+- **n8n-troubleshooter MCP Server**: Expanded from 45 → 61 tools
+  - Phase 1: Execution control (5 tools)
+  - Phase 2: Workflow CRUD (5 tools)
+  - Phase 3: Version control + node operations (6 tools)
+- **Security Decision**: Removed `n8n_troubleshooter` from ARIA's tools (AI with direct n8n management = risk)
+- **Tool Schemas**: 100% coverage achieved (14/14 ARIA tools)
+- **Analytics Tools**: Pattern Detection & Context Summarizer now on-demand callable
 
 ---
 
@@ -16,17 +46,20 @@
 **Time:** 15-30 minutes
 
 ### 2. ~~Add Tool Schemas~~ ✅ COMPLETED (January 12, 2026)
-**Status:** 15/15 tools now have schemas (100% coverage)
+**Status:** 13/13 ARIA tools now have schemas (100% coverage)
 
-**Added schemas for:**
+**Note:** `n8n_troubleshooter` was removed from ARIA's tool access (security decision - direct n8n management by AI poses risks). The tool remains available via MCP server for Claude Code.
+
+**Note 2:** `find_test_events` was removed (user confirmed not needed - calendar delete functionality to be upgraded in future).
+
+**Tools with schemas:**
 - `search_memory` - query, limit, min_confidence, types[]
 - `context_manager` - operation (get/set/update/clear), context_data, key
 - `task_analytics` - time_range, metric_type, include_details
 - `get_launch_status` - show_details, include_risks, format
 - `cbt_therapist` - message, mode (analysis/support/challenge/reframe), context
-- `find_test_events` - pattern, days_back, days_forward
-- `pattern_detection` - time_range, focus_area (tasks/decisions/procrastination/all)
-- `context_summarizer` - session_id, max_age_hours, min_messages
+- `pattern_detection` - time_range, focus_area (tasks/decisions/procrastination/all) - **Now functional with real analysis**
+- `context_summarizer` - session_id, max_age_hours, min_messages - **Fixed to use ARIA schema**
 
 **Also added:**
 - Execute Workflow Triggers to Pattern Detection and Context Summarizer (now callable on-demand)
@@ -64,12 +97,21 @@ User Request → ARIA → Operations Agent
 - Comprehensive logging
 - Rollback capability
 
+**NEW: n8n-troubleshooter MCP Server (61 tools available)**
+The MCP server now provides comprehensive n8n control:
+- Execution Control: execute_workflow, activate/deactivate, cancel, get_running
+- Workflow CRUD: create, update, clone, delete, import workflows
+- Version Control: get_versions, compare_versions, rollback_to_version
+- Node Operations: add_node, remove_node, update_node
+- 45+ diagnostic tools for troubleshooting
+
+Operations Agent can leverage these MCP tools for n8n automation without direct DB access.
+
 **Safety Protocol:**
 
 Auto-execute: Read operations, non-destructive ops, restartable services
 Require confirmation: DELETE operations, DROP/TRUNCATE, service shutdowns, credential changes
 
-**Time:** 1 week to build
 **Value:** Future automation becomes trivial
 
 ---

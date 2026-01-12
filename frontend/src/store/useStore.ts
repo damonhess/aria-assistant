@@ -125,6 +125,7 @@ export const useStore = create<Store>((set, get) => ({
     const { data, error } = await supabase
       .from('aria_conversations')
       .select('*')
+      .eq('is_archived', false)
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -185,13 +186,14 @@ export const useStore = create<Store>((set, get) => ({
   },
 
   deleteConversation: async (id: string) => {
+    // Soft delete: archive instead of hard delete
     const { error } = await supabase
       .from('aria_conversations')
-      .delete()
+      .update({ is_archived: true, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting conversation:', error);
+      console.error('Error archiving conversation:', error);
       toast.error('Failed to delete conversation');
       return;
     }
