@@ -1,6 +1,6 @@
 # ARIA - Loose Ends & Immediate Priorities
 
-*Last Updated: January 8, 2026*
+*Last Updated: January 12, 2026*
 
 ---
 
@@ -150,16 +150,31 @@ Need Supabase Storage buckets:
 
 ## TECHNICAL DEBT
 
-### 12. n8n Workflow Caching Issue
-**Discovery:** n8n aggressively caches workflows
-**Workaround:** Toggle active state + restart after DB updates
-**Better solution:** Always use n8n API for updates instead of direct DB
-**Document:** Add to troubleshooting guide
+### 12. n8n Workflow Versioning (DOCUMENTED)
+**Discovery:** n8n uses `workflow_history` for execution, not `workflow_entity`
+**Root Cause:** SQL updates to `workflow_entity` don't update what n8n runs
+**Fix:** Must update BOTH `workflow_entity` AND `workflow_history` tables
+**Document:** See KNOWLEDGE-BASE.md Section 1 for complete fix
 
 ### 13. Credential Resolution in Sub-Workflows
 **Issue:** Credentials sometimes fail to resolve in Execute Workflow Trigger scenarios
 **Workaround:** Use direct Postgres/HTTP nodes instead
 **Need:** Document pattern for future workflow building
+
+### 14. Batch Deletion of Same-Named Events (WORKAROUND IN PLACE)
+**Issue:** Deleting multiple events with same name (e.g., 12 "Test Event") fails
+**Root Cause:** Event selection always returns same event ID for matching names
+**Current Fix:** Random selection from duplicates using `Date.now() % length`
+**Behavior:** Works iteratively (takes 2-3 calls for large batches)
+**Better Fix:** Implement true `batch_mode` parameter in AI agent tool definition
+**Priority:** Medium - workaround works, proper fix improves efficiency
+**Document:** See KNOWLEDGE-BASE.md Section 6 for details
+
+### 15. Google OAuth Token Refresh
+**Issue:** OAuth tokens expire and n8n's built-in refresh sometimes fails with Cloudflare Access
+**Current Fix:** Manual token injection via OAuth Playground
+**Better Fix:** Create bypass rule in Cloudflare Access for OAuth callback
+**Document:** See KNOWLEDGE-BASE.md Sections 2-4 for complete procedures
 
 ---
 

@@ -112,10 +112,16 @@ psql -f supabase/migrations/003_consolidate_pa_to_aria.sql
 
 ## Documentation
 
+**Core Documentation:**
 - [Architecture Overview](docs/ARCHITECTURE.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Backup Strategy](docs/BACKUP.md)
 - [Migration Plan](MIGRATION_PLAN.md) - PA to ARIA schema consolidation
+
+**Operations & Troubleshooting:**
+- [Knowledge Base](docs/KNOWLEDGE-BASE.md) - Lessons learned, solutions to common problems
+- [Loose Ends](docs/LOOSE-ENDS.md) - Current priorities and technical debt
+- [Future Vision](docs/FUTURE-VISION.md) - Long-term roadmap and planned features
 
 ## License
 
