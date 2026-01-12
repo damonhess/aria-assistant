@@ -93,16 +93,20 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           <p className="mb-4 leading-7 text-foreground">{children}</p>
         ),
         ul: ({ children }) => (
-          <ul className="list-disc list-outside mb-4 space-y-2 text-foreground pl-6">
+          <ul className="list-disc list-outside mb-4 ml-5 space-y-2 text-foreground">
             {children}
           </ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal list-outside mb-4 space-y-2 text-foreground pl-6">
+          <ol className="list-decimal list-outside mb-4 ml-5 space-y-2 text-foreground">
             {children}
           </ol>
         ),
-        li: ({ children }) => <li className="text-foreground leading-7">{children}</li>,
+        li: ({ children }) => (
+          <li className="text-foreground leading-7">
+            {children}
+          </li>
+        ),
         blockquote: ({ children }) => (
           <blockquote className="border-l-4 border-blue-500 pl-4 italic my-4 text-muted-foreground">
             {children}
