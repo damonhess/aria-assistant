@@ -15,37 +15,19 @@
 **Location:** `/home/damon/aria-assistant/frontend/src/components/`
 **Time:** 15-30 minutes
 
-### 2. Add Tool Schemas (5 remaining tools)
-Currently 5/11 tools have schemas (45% coverage). Need schemas for:
+### 2. ~~Add Tool Schemas~~ ✅ COMPLETED (January 12, 2026)
+**Status:** 12/13 tools now have schemas (92% coverage)
 
-**search_memory:**
-- Search unified memory with vector similarity
-- Parameters: query (string), limit (number), min_confidence (number)
-- Returns: matching memories with confidence scores
+**Added schemas for:**
+- `search_memory` - query, limit, min_confidence, types[]
+- `context_manager` - operation (get/set/update/clear), context_data, key
+- `task_analytics` - time_range, metric_type, include_details
+- `get_launch_status` - show_details, include_risks, format
+- `cbt_therapist` - message, mode (analysis/support/challenge/reframe), context
 
-**context_manager:**
-- Track current state/context
-- Parameters: operation (get/set/update/clear), context_data (object)
-- Returns: current context state
+**Remaining:** `find_test_events` (1 tool, low priority)
 
-**task_analytics:**
-- Task performance metrics
-- Parameters: time_range (string), metric_type (completion_rate/time_spent/patterns)
-- Returns: analytics data and visualizations
-
-**get_launch_status:**
-- 4-week launch timeline status
-- Parameters: show_details (boolean)
-- Returns: current phase, completed milestones, risks
-
-**cbt_therapist:**
-- Mental health support and cognitive distortion detection
-- Parameters: message (string), mode (analysis/support/challenge)
-- Returns: assessment and supportive response
-
-**Why:** Without schemas, AI doesn't know what parameters to send
-**Time:** 1-2 hours total
-**Impact:** Better AI tool usage accuracy
+**Location:** Updated in `workflow_entity` and `workflow_history` for workflow ID `aX8d9zWniCYaIDwc`
 
 ### 3. Separate ARIA vs PA Tool Routing
 **Issue:** Both ARIA and Personal Assistant share same tool workflows

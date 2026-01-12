@@ -2,8 +2,8 @@
 
 **Workflow:** Personal Assistant - AI Agent Main
 **Workflow ID:** aX8d9zWniCYaIDwc
-**Audit Date:** 2026-01-06
-**Total Tools:** 11
+**Audit Date:** 2026-01-06 (Updated: 2026-01-12)
+**Total Tools:** 13
 
 ---
 
@@ -11,11 +11,13 @@
 
 | Status | Count | Tools |
 |--------|-------|-------|
-| With Schema | 5 | store_memory, manage_tasks, decision_tracker, calendar_write, launch_timeline_manager |
-| Missing Schema | 6 | search_memory, context_manager, task_analytics, calendar_read, get_launch_status, cbt_therapist |
+| With Schema | 12 | store_memory, search_memory, context_manager, manage_tasks, task_analytics, decision_tracker, calendar_read, calendar_write, get_launch_status, launch_timeline_manager, cbt_therapist, n8n_troubleshooter |
+| Missing Schema | 1 | find_test_events |
 | Broken Workflows | 0 | All workflows exist and are accessible |
 
 **UPDATE 2026-01-06:** Added schemas to `store_memory` and `calendar_write` (critical tools).
+
+**UPDATE 2026-01-12:** Added schemas to remaining 5 tools: `search_memory`, `context_manager`, `task_analytics`, `get_launch_status`, `cbt_therapist`. Schema coverage now at 92%.
 
 ---
 
@@ -285,19 +287,22 @@ Add these schemas to the respective tool nodes in `ai-agent-main.json`:
 
 ## Implementation Checklist
 
-### Critical (Fix Today)
-- [ ] Add `store_memory` schema to ai-agent-main.json (Tool: Store Memory node)
-- [ ] Add `calendar_write` schema to ai-agent-main.json (Tool: Calendar Write node)
+### Critical (Fix Today) ✅ COMPLETED
+- [x] Add `store_memory` schema to ai-agent-main.json (Tool: Store Memory node)
+- [x] Add `calendar_write` schema to ai-agent-main.json (Tool: Calendar Write node)
 
-### Medium Priority
-- [ ] Add `search_memory` schema to ai-agent-main.json
-- [ ] Add `calendar_read` schema to ai-agent-main.json
-- [ ] Add `context_manager` schema (need to analyze workflow first)
+### Medium Priority ✅ COMPLETED (January 12, 2026)
+- [x] Add `search_memory` schema to ai-agent-main.json
+- [x] Add `calendar_read` schema to ai-agent-main.json
+- [x] Add `context_manager` schema
 
-### Low Priority
-- [ ] Add `task_analytics` schema (read-only, minimal risk)
-- [ ] Add `get_launch_status` schema (no parameters needed)
-- [ ] Add `cbt_therapist` schema (conversational, flexible)
+### Low Priority ✅ COMPLETED (January 12, 2026)
+- [x] Add `task_analytics` schema
+- [x] Add `get_launch_status` schema
+- [x] Add `cbt_therapist` schema
+
+### Remaining
+- [ ] Add `find_test_events` schema (low priority, utility tool)
 
 ---
 
@@ -339,17 +344,26 @@ For each tool in `ai-agent-main.json`, add these properties to the tool node:
 
 | Metric | Value |
 |--------|-------|
-| Total Tools | 11 |
-| With Schemas | 5 (45%) |
-| Missing Schemas | 6 (55%) |
+| Total Tools | 13 |
+| With Schemas | 12 (92%) |
+| Missing Schemas | 1 (8%) |
 | Broken Workflows | 0 (0%) |
 | Active Workflows | All confirmed |
 | Schema Coverage Target | 100% |
 
-**Risk Level:** LOW - Critical data-modifying tools (store_memory, calendar_write) now have schemas.
+**Risk Level:** MINIMAL - All critical tools have schemas.
 
 **Completed 2026-01-06:**
 - Added schema to `store_memory`
 - Added schema to `calendar_write`
 
-**Remaining:** Add schemas to read-only tools (search_memory, calendar_read, etc.) for consistency.
+**Completed 2026-01-12:**
+- Added schema to `search_memory`
+- Added schema to `context_manager`
+- Added schema to `task_analytics`
+- Added schema to `get_launch_status`
+- Added schema to `cbt_therapist`
+- Added schema to `calendar_read`
+- Added schema to `n8n_troubleshooter`
+
+**Remaining:** `find_test_events` (utility tool, low priority)
