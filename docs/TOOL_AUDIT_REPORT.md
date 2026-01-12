@@ -3,7 +3,7 @@
 **Workflow:** Personal Assistant - AI Agent Main
 **Workflow ID:** aX8d9zWniCYaIDwc
 **Audit Date:** 2026-01-06 (Updated: 2026-01-12)
-**Total Tools:** 13
+**Total Tools:** 15
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Status | Count | Tools |
 |--------|-------|-------|
-| With Schema | 13 | store_memory, search_memory, context_manager, manage_tasks, task_analytics, decision_tracker, calendar_read, calendar_write, get_launch_status, launch_timeline_manager, cbt_therapist, n8n_troubleshooter, find_test_events |
+| With Schema | 15 | store_memory, search_memory, context_manager, manage_tasks, task_analytics, decision_tracker, calendar_read, calendar_write, get_launch_status, launch_timeline_manager, cbt_therapist, n8n_troubleshooter, find_test_events, pattern_detection, context_summarizer |
 | Missing Schema | 0 | None |
 | Broken Workflows | 0 | All workflows exist and are accessible |
 
@@ -344,8 +344,8 @@ For each tool in `ai-agent-main.json`, add these properties to the tool node:
 
 | Metric | Value |
 |--------|-------|
-| Total Tools | 13 |
-| With Schemas | 13 (100%) |
+| Total Tools | 15 |
+| With Schemas | 15 (100%) |
 | Missing Schemas | 0 (0%) |
 | Broken Workflows | 0 (0%) |
 | Active Workflows | All confirmed |
@@ -366,5 +366,7 @@ For each tool in `ai-agent-main.json`, add these properties to the tool node:
 - Added schema to `calendar_read`
 - Added schema to `n8n_troubleshooter`
 - Added schema to `find_test_events`
+- Added schema to `pattern_detection` (converted from scheduled to on-demand tool)
+- Added schema to `context_summarizer` (converted from scheduled to on-demand tool)
 
-**Status:** COMPLETE - 100% schema coverage achieved.
+**Status:** COMPLETE - 100% schema coverage achieved (15/15 tools).

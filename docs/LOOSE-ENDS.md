@@ -16,7 +16,7 @@
 **Time:** 15-30 minutes
 
 ### 2. ~~Add Tool Schemas~~ ✅ COMPLETED (January 12, 2026)
-**Status:** 13/13 tools now have schemas (100% coverage)
+**Status:** 15/15 tools now have schemas (100% coverage)
 
 **Added schemas for:**
 - `search_memory` - query, limit, min_confidence, types[]
@@ -25,6 +25,12 @@
 - `get_launch_status` - show_details, include_risks, format
 - `cbt_therapist` - message, mode (analysis/support/challenge/reframe), context
 - `find_test_events` - pattern, days_back, days_forward
+- `pattern_detection` - time_range, focus_area (tasks/decisions/procrastination/all)
+- `context_summarizer` - session_id, max_age_hours, min_messages
+
+**Also added:**
+- Execute Workflow Triggers to Pattern Detection and Context Summarizer (now callable on-demand)
+- "Analytics Tools" sticky note in AI Agent Main
 
 **Location:** Updated in `workflow_entity` and `workflow_history` for workflow ID `aX8d9zWniCYaIDwc`
 
