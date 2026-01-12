@@ -1,10 +1,22 @@
 # ARIA - Loose Ends & Immediate Priorities
 
-*Last Updated: January 12, 2026 (late evening - tool registration fixes)*
+*Last Updated: January 12, 2026 (night - conversation deletion fixes)*
 
 ---
 
 ## Recent Session Accomplishments
+
+### January 12, 2026 (Night) - Conversation Deletion Fixes
+- **FK Constraint Fixes**: Fixed foreign keys that would block conversation deletion
+  - `aria_unified_memory.source_conversation_id` → ON DELETE SET NULL
+  - `aria_unified_memory.source_message_id` → ON DELETE SET NULL
+  - `aria_interface_sync.message_id` → ON DELETE CASCADE
+- **Soft Delete Implementation**: Changed frontend to archive instead of hard delete
+  - `deleteConversation()` now sets `is_archived: true`
+  - `loadConversations()` filters out archived conversations
+  - Conversations can be recovered if needed
+- **Documentation**: Added KNOWLEDGE-BASE.md Section 10 (Conversation Deletion & Cleanup)
+- **Technical Debt Logged**: Storage bucket cleanup and n8n memory cleanup documented
 
 ### January 12, 2026 (Late Evening) - Tool Registration & Schema Fixes
 - **Pattern Detection Tool**: Rebuilt with real analysis logic
@@ -204,6 +216,29 @@ Need Supabase Storage buckets:
 **Current Fix:** Manual token injection via OAuth Playground
 **Better Fix:** Create bypass rule in Cloudflare Access for OAuth callback
 **Document:** See KNOWLEDGE-BASE.md Sections 2-4 for complete procedures
+
+### 16. Storage Bucket Cleanup on Conversation Delete
+**Issue:** When conversations are archived/deleted, attachment files remain in Supabase Storage
+**Tables Affected:** `aria_attachments` records are deleted, but actual files in `chat-files` bucket persist
+**Current State:** No cleanup mechanism exists
+**Solution Options:**
+1. Supabase Edge Function triggered on `aria_attachments` delete
+2. n8n scheduled workflow to find and delete orphaned files
+3. Manual cleanup script run periodically
+
+**Implementation Notes:**
+```sql
+-- Find orphaned files (files in storage not in aria_attachments)
+-- Requires comparing storage bucket contents vs aria_attachments.storage_path
+```
+**Priority:** Low - not urgent until file uploads are heavily used
+**Document:** See KNOWLEDGE-BASE.md Section 10 for context
+
+### 17. n8n Chat Memory Cleanup
+**Issue:** n8n's `n8n_chat_histories` table not cleaned when ARIA conversations archived
+**Current State:** Orphaned session data accumulates
+**Solution:** Scheduled n8n workflow or manual periodic cleanup
+**Document:** See KNOWLEDGE-BASE.md Section 10 for cleanup queries
 
 ---
 
