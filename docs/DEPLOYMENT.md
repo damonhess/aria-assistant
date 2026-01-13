@@ -84,11 +84,99 @@ npm run build
 
 Deploy `dist/` to your preferred hosting (Vercel, Netlify, or Docker).
 
+## Development Environment (Added Jan 13, 2026)
+
+ARIA now uses a separate development n8n instance for safe experimentation.
+
+### Dev Environment Setup
+
+The dev environment was created with:
+
+1. **Separate database:**
+   ```bash
+   docker exec n8n-postgres psql -U n8n -d postgres -c "CREATE DATABASE n8n_dev;"
+   ```
+
+2. **Docker container added to `/home/damon/stack/docker-compose.yml`:**
+   - Service: `n8n-dev`
+   - Database: `n8n_dev`
+   - Volume: `n8n_dev_data`
+
+3. **Caddy route added to `/home/damon/stack/Caddyfile`:**
+   ```
+   dev.n8n.leveredgeai.com {
+       reverse_proxy n8n-dev:5678
+   }
+   ```
+
+4. **DNS record required (Cloudflare):**
+   - Type: CNAME
+   - Name: `dev.n8n`
+   - Content: `n8n.leveredgeai.com`
+
+### Managing Dev Environment
+
+```bash
+# Start dev n8n
+docker compose up -d n8n-dev
+
+# Check status
+docker ps | grep n8n-dev
+
+# View logs
+docker logs n8n-dev --tail 50 -f
+
+# Restart
+docker restart n8n-dev
+
+# Reload Caddy after config changes
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+### Setting Up Dev Credentials
+
+After dev n8n is accessible, add credentials via UI at dev.n8n.leveredgeai.com:
+
+| Priority | Credential Type | Name |
+|----------|-----------------|------|
+| Critical | OpenAI API | OpenAi account |
+| Critical | Postgres | Supabase Postgres server |
+| High | Google Calendar OAuth | Google Calendar account |
+| High | Supabase API | Self-hosted Supabase account |
+
+### Dev vs Prod
+
+| Aspect | Production | Development |
+|--------|------------|-------------|
+| URL | n8n.leveredgeai.com | dev.n8n.leveredgeai.com |
+| Database | `n8n` | `n8n_dev` |
+| Container | `n8n` | `n8n-dev` |
+| Credentials | Configured | Must setup manually |
+| Workflows | Stable | Experimental |
+
+See [DEV-PROD-WORKFLOW.md](./DEV-PROD-WORKFLOW.md) for complete workflow procedures.
+
 ## Health Checks
 
 Run the health check script:
 ```bash
 ./scripts/health-check.sh
+```
+
+### Quick Environment Checks
+
+```bash
+# Check production
+curl -s -o /dev/null -w "%{http_code}" https://n8n.leveredgeai.com
+# Expected: 302 (redirect to login)
+
+# Check development
+curl -s -o /dev/null -w "%{http_code}" https://dev.n8n.leveredgeai.com
+# Expected: 302 (redirect to login)
+
+# Check ARIA frontend
+curl -s -o /dev/null -w "%{http_code}" https://aria.leveredgeai.com
+# Expected: 200
 ```
 
 ## Updating

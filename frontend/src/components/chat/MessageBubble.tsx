@@ -44,6 +44,11 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
     }
   };
 
+  // Toggle actions on tap for mobile, show on hover for desktop
+  const handleToggleActions = () => {
+    setShowActions((prev) => !prev);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -53,6 +58,7 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
       className={cn('flex', isUser ? 'justify-end' : 'justify-start')}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onClick={handleToggleActions}
     >
       <div
         className={cn(
@@ -83,9 +89,10 @@ export function MessageBubble({ message, index }: MessageBubbleProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'flex items-center gap-1 mt-2 pt-2 border-t',
+              'flex items-center gap-1 mt-2 pt-2 border-t flex-wrap',
               isUser ? 'border-white/20' : 'border-zinc-700'
             )}
+            onClick={(e) => e.stopPropagation()}
           >
             <Button
               variant="ghost"

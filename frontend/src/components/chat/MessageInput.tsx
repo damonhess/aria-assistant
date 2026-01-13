@@ -90,7 +90,7 @@ export function MessageInput() {
   };
 
   return (
-    <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl">
+    <div className="border-t border-border/50 bg-background/80 backdrop-blur-xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="max-w-4xl mx-auto px-4 lg:px-6 py-4">
         <AnimatePresence>
           {selectedFiles.length > 0 && (
@@ -153,7 +153,7 @@ export function MessageInput() {
               isListening ? 'Listening...' : 'Message ARIA...'
             }
             className={cn(
-              'min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0',
+              'min-h-[44px] max-h-[120px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base',
               'scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent',
               isListening && 'text-red-500'
             )}

@@ -1,6 +1,6 @@
 # ARIA Future Vision - Advanced Agent Systems
 
-*Version 1.0 - January 8, 2026*
+*Version 1.1 - January 13, 2026*
 
 ---
 
@@ -49,6 +49,170 @@ Expand ARIA from personal AI operating system to comprehensive multi-agent intel
 - Code: Prism.js or Highlight.js
 
 **Time Estimate:** 2-3 weeks
+
+---
+
+## 1B. ARIA UI ENHANCEMENTS (MEDIUM PRIORITY) ⭐ NEW
+
+### January 13, 2026 Additions
+
+Building on the Mobile UI & PWA work completed January 12, 2026, these are targeted improvements to enhance the ARIA web interface experience.
+
+### Completed Enhancements ✅
+- **Mobile Touch Support**: Tap-to-toggle message actions (Copy, Speak, Regenerate)
+- **iOS Safe Area Insets**: Proper padding for notch/home indicator devices
+- **Responsive Sidebar**: Dynamic width (85vw max-w-80) for small screens
+- **PWA Configuration**: Full-screen standalone app with custom icon
+- **Input Zoom Fix**: Prevented iOS auto-zoom with 16px base font
+
+### Planned Enhancements
+
+**Conversation Management:**
+- Conversation search/filter functionality
+- Conversation tagging and categorization
+- Bulk conversation actions (archive multiple, export)
+- Conversation sharing/export to PDF
+
+**Message Improvements:**
+- Edit sent messages
+- Message reactions/bookmarks
+- Pin important messages within conversation
+- Message search within conversation
+
+**Persona Experience:**
+- Persona-specific themes/colors
+- Visual indicator of current persona in header
+- Quick persona switcher (dropdown or tabs)
+- Persona-specific greeting messages
+
+**Input Enhancements:**
+- Slash commands autocomplete (/)
+- @mentions for tool suggestions
+- Recent prompts/favorites
+- Voice input button (for future voice integration)
+
+**Settings & Preferences:**
+- Dark/light mode toggle (respect system preference)
+- Font size adjustment
+- Notification preferences
+- Keyboard shortcuts panel
+
+### Technical Implementation Notes
+- Use existing shadcn/ui components where possible
+- Store preferences in `aria_user_preferences_local` table
+- Sync preferences across devices via session_id
+
+---
+
+## 1C. ARIA INTEGRATIONS (MEDIUM PRIORITY) ⭐ NEW
+
+### Current Integrations ✅
+- **Google Calendar**: Read/write events via calendar_read and calendar_write tools
+- **Google Tasks**: Task management via manage_tasks tool
+- **Memory System**: Store/search via aria_unified_memory
+
+### Planned Integrations
+
+**Communication:**
+- **Telegram Interface**: Bot for mobile messaging (Workflow: 17-telegram-interface)
+- **Email Integration**: Send/receive emails, draft management
+- **Slack/Discord**: Bot interfaces for team communication
+
+**Productivity:**
+- **Notion Integration**: Sync notes, databases, pages
+- **Todoist/Asana**: Alternative task management systems
+- **Google Drive**: File access, document creation
+
+**Information:**
+- **Web Search**: Real-time information retrieval
+- **News/RSS Feeds**: Stay updated on topics of interest
+- **Weather API**: Location-based forecasts
+
+**Smart Home (Future):**
+- **Home Assistant**: Control smart devices
+- **IFTTT/Zapier**: Trigger automations
+
+### Integration Architecture
+```
+ARIA Web Interface
+       ↓
+   AI Agent Main
+       ↓
+   Tool Router
+       ↓
+┌──────┼──────┼──────┐
+↓      ↓      ↓      ↓
+Calendar  Tasks  Memory  [Future Tools]
+```
+
+Each integration follows the same pattern:
+1. Tool node with schema definition
+2. Execute Workflow Trigger
+3. Dedicated workflow for API calls
+4. Error handling and response formatting
+
+---
+
+## 1D. VOICE INTEGRATION (FUTURE) ⭐ NEW
+
+### Vision
+Enable natural voice conversations with ARIA, supporting both speech-to-text input and text-to-speech output.
+
+### Components
+
+**Speech-to-Text (Input):**
+- Browser Web Speech API (free, Chrome/Edge)
+- OpenAI Whisper API (high accuracy, paid)
+- Local Whisper model (privacy, self-hosted)
+
+**Text-to-Speech (Output):**
+- Browser Web Speech API (basic voices)
+- ElevenLabs API (natural, premium voices)
+- OpenAI TTS API (good quality, affordable)
+- Edge TTS (free, decent quality)
+
+### Implementation Options
+
+**Option 1: Browser-Based (Simplest)**
+- Use Web Speech API for both STT and TTS
+- Works in Chrome, Edge, Safari
+- No additional cost
+- Limited voice quality
+
+**Option 2: Hybrid (Recommended)**
+- Web Speech API for STT (good enough for input)
+- ElevenLabs or OpenAI for TTS (better output quality)
+- Configurable voice selection
+- Cost: ~$5-20/month for typical usage
+
+**Option 3: Full Premium**
+- OpenAI Whisper for STT
+- ElevenLabs for TTS
+- Highest quality
+- Cost: ~$20-50/month
+
+### UI Changes Required
+- Microphone button in message input
+- Speaker button on AI responses (already exists as "Speak")
+- Voice mode toggle in settings
+- Push-to-talk vs continuous listening option
+
+### Technical Considerations
+- Audio recording permissions
+- Noise cancellation
+- Streaming TTS for long responses
+- Wake word detection (future)
+- Multi-language support
+
+### Already Implemented ✅
+- "Speak" button on messages uses browser TTS
+- Responsive design ready for voice UI
+
+### Next Steps
+1. Add microphone button to input area
+2. Implement Web Speech API recording
+3. Send transcribed text to existing message flow
+4. Consider premium TTS upgrade for output
 
 ---
 
@@ -745,16 +909,25 @@ CREATE TABLE media_outlets (
 
 ## Implementation Priorities
 
+**Immediate (This Week):**
+1. Dev/Prod Environment Separation (prevent accidental production issues)
+2. Google Tasks Credential verification
+3. ARIA vs PA Tool Routing separation
+
 **Phase 1 (Month 1-2):**
 1. Operations Agent (critical for development velocity)
 2. Rich Media UI (better user experience)
+3. ARIA UI Enhancements (persona switcher, conversation search)
+4. Voice Integration - Basic (microphone input using Web Speech API)
 
 **Phase 2 (Month 2-4):**
-3. System Documentation Agent (preserve knowledge)
-4. Presentation Creation Agent (client value)
+5. System Documentation Agent (preserve knowledge)
+6. Presentation Creation Agent (client value)
+7. ARIA Integrations (Telegram, Email, Notion)
+8. Voice Integration - Premium (ElevenLabs TTS)
 
 **Phase 3 (Month 4-12):**
-5. Geopolitical Intelligence System (separate product)
+9. Geopolitical Intelligence System (separate product)
 
 ---
 

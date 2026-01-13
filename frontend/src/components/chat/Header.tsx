@@ -53,12 +53,12 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex-1 flex justify-center">
+      <div className="flex-1 flex justify-center min-w-0 px-2">
         <motion.h2
           key={conversations.active?.id}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm font-medium text-muted-foreground max-w-md truncate"
+          className="text-sm font-medium text-muted-foreground max-w-[150px] sm:max-w-xs md:max-w-md truncate"
         >
           {conversations.active?.title || 'New Conversation'}
         </motion.h2>

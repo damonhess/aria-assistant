@@ -134,6 +134,61 @@ SELECT * FROM conversations WHERE session_id = 'xxx';
 
 See [MIGRATION_PLAN.md](../MIGRATION_PLAN.md) for migration details.
 
+## Environment Separation (Added Jan 13, 2026)
+
+ARIA uses separate development and production environments to prevent accidental breakage:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     PRODUCTION ENVIRONMENT                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ n8n (PROD)  │  │ aria-web    │  │ Supabase (shared)       │  │
+│  │ :5678       │  │ :80         │  │ PostgreSQL + pgvector   │  │
+│  └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘  │
+│         │                │                      │                │
+│         └────────────────┼──────────────────────┘                │
+│                          │                                       │
+│  URLs: n8n.leveredgeai.com, aria.leveredgeai.com                │
+└──────────────────────────┼───────────────────────────────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │   Caddy     │
+                    │  (reverse   │
+                    │   proxy)    │
+                    └──────┬──────┘
+                           │
+┌──────────────────────────┼───────────────────────────────────────┐
+│                     DEVELOPMENT ENVIRONMENT                       │
+│  ┌─────────────┐                                                 │
+│  │ n8n-dev     │  Database: n8n_dev (separate from prod)        │
+│  │ :5678       │  Credentials: Must be configured separately    │
+│  └─────────────┘                                                 │
+│                                                                  │
+│  URL: dev.n8n.leveredgeai.com                                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Environment Details
+
+| Component | Production | Development |
+|-----------|------------|-------------|
+| n8n URL | n8n.leveredgeai.com | dev.n8n.leveredgeai.com |
+| n8n Database | `n8n` | `n8n_dev` |
+| Webhook Base | hooks.leveredgeai.com | dev.n8n.leveredgeai.com |
+| Container | `n8n` | `n8n-dev` |
+| Supabase | Shared | Shared |
+| Credentials | Configured | Must setup separately |
+
+### Development Workflow
+
+1. **Develop** on dev.n8n.leveredgeai.com
+2. **Test** thoroughly in dev environment
+3. **Export** working workflow as JSON
+4. **Import** to production n8n.leveredgeai.com
+5. **Activate** and verify on production
+
+See [DEV-PROD-WORKFLOW.md](./DEV-PROD-WORKFLOW.md) for detailed procedures.
+
 ## Security Considerations
 
 - All API keys stored in environment variables
@@ -141,3 +196,4 @@ See [MIGRATION_PLAN.md](../MIGRATION_PLAN.md) for migration details.
 - HTTPS for all external communications
 - Input sanitization on all user inputs
 - User-scoped storage bucket policies
+- Separate dev/prod environments prevent accidental production changes

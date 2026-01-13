@@ -1,10 +1,54 @@
 # ARIA - Loose Ends & Immediate Priorities
 
-*Last Updated: January 12, 2026 (night - conversation deletion fixes)*
+*Last Updated: January 13, 2026 (persona switch & memory fixes)*
 
 ---
 
 ## Recent Session Accomplishments
+
+### January 13, 2026 - Persona Switch & Memory Fixes
+- **Persona Switch Bug Fixed**: ARIA now correctly switches personas without errors
+  - Root cause: SQL used wrong table name (`aria_user_preferences` vs `aria_user_preferences_local`)
+  - Fixed ARIA Model Router to use correct table
+  - Updated both `workflow_entity` and `workflow_history` tables
+- **"No Response Generated" Fixed**: Regular messages to ARIA now work correctly
+  - Root cause: Save Persona Preference output `{?column?: 1}` was overwriting message data
+  - Added "Prepare AI Request" Code node using `$getWorkflowStaticData('global')` for data passing
+  - Fixed paired item data error by avoiding direct node references between non-connected nodes
+- **Postgres Chat Memory Restored**: Personal Assistant now has persistent memory
+  - Root cause: Missing database credentials on Postgres Chat Memory node
+  - Added credentials `{"postgres": {"id": "aVP8htYcA8y2UOih", "name": "Supabase Postgres server"}}`
+  - Verified memory persists across n8n restarts
+- **n8n Workflow Caching Understood**: Documented that n8n uses `workflow_history` table (via `activeVersionId`), NOT `workflow_entity` for execution
+- **Workflow Organization**:
+  - Moved all ARIA-related workflows to "ARIA Frontend" folder
+  - Deleted 8 inactive Personal Assistant workflows
+  - Deleted 3 empty folders (Tools, Advanced, Personal Assistant)
+- **Backups Created**: Working workflow versions backed up via n8n-troubleshooter MCP
+
+### January 12, 2026 (Late Night) - Mobile UI & PWA
+- **Mobile Touch Support**: Message actions (Copy, Speak, Regenerate) now accessible via tap
+  - Changed from hover-only to tap-to-toggle
+  - Added `stopPropagation` on action buttons
+- **iOS Safe Area Insets**: Added padding for notch/home indicator devices
+  - Body: top/left/right safe area padding
+  - MessageInput: bottom safe area padding
+- **Responsive Sidebar**: Changed from fixed `w-80` to `w-[85vw] max-w-80`
+  - Prevents overflow on small phones (iPhone SE)
+- **Mobile Delete Button**: Always visible on mobile, hover-only on desktop
+- **Header Title**: Responsive max-width (`150px` → `xs` → `md`)
+- **Input Zoom Fix**: Prevented iOS auto-zoom on input focus
+  - Viewport: `maximum-scale=1.0, user-scalable=no`
+  - Textarea: Added `text-base` class (16px font)
+- **PWA Configuration**: Full-screen standalone app when added to home screen
+  - `manifest.json` with standalone display mode
+  - iOS meta tags for web app capable
+  - Custom ARIA icon (luxury dark "A" design)
+  - Theme color: #0a0f1a
+- **Automated Daily Backups**: Cron job at 3 AM
+  - Backs up Supabase ARIA tables, n8n workflows, config files
+  - 7-day retention with auto-cleanup
+  - Documentation: KNOWLEDGE-BASE.md Section 11
 
 ### January 12, 2026 (Night) - Conversation Deletion Fixes
 - **FK Constraint Fixes**: Fixed foreign keys that would block conversation deletion
@@ -48,14 +92,10 @@
 
 ## HIGH PRIORITY (Next Session - Week 1)
 
-### 1. UI Formatting Fixes
-**Issue:** Numbered lists in ARIA responses show numbers on separate lines from content
-- Numbers appear on one line, content on next line
-- Should be: `1. Memory Management: I can store...`
-- Currently: `1.` on one line, `Memory Management: I can store...` on next
-**Fix:** CSS adjustment in message display component
-**Location:** `/home/damon/aria-assistant/frontend/src/components/`
-**Time:** 15-30 minutes
+### 1. ~~UI Formatting Fixes~~ ✅ COMPLETED (January 12, 2026)
+**Status:** Fixed in MarkdownRenderer.tsx
+- Changed `pl-6` to `ml-5` with `list-outside` for proper list rendering
+- Numbers now appear inline with content
 
 ### 2. ~~Add Tool Schemas~~ ✅ COMPLETED (January 12, 2026)
 **Status:** 13/13 ARIA tools now have schemas (100% coverage)
@@ -79,15 +119,29 @@
 
 **Location:** Updated in `workflow_entity` and `workflow_history` for workflow ID `aX8d9zWniCYaIDwc`
 
-### 3. Separate ARIA vs PA Tool Routing
-**Issue:** Both ARIA and Personal Assistant share same tool workflows
-**Better:** Create ARIA-specific versions
-- 04-store-memory-aria.json (routes to aria_unified_memory)
-- 05-search-memory-aria.json (searches aria_unified_memory)
-- Allows different schemas and behavior per interface
-**Time:** 1-2 hours
+### 3. Dev/Prod Environment Separation ⭐ NEW
+**Issue:** Development and production environments not clearly separated
+**Risk:** Testing on production, accidental data corruption, unclear deployment path
+**Need:**
+- Separate development n8n instance or workflow staging area
+- Clear deployment process from dev → prod
+- Environment-specific configurations
+- Database migration workflow
+**Impact:** Prevents accidental production issues during development
 
-### 4. Build Operations Agent ⭐ CRITICAL
+### 4. n8n workflow_history vs workflow_entity ✅ DOCUMENTED
+**Status:** Root cause understood and documented (January 13, 2026)
+
+**Key Discovery:** n8n loads workflows from `workflow_history` table (via `activeVersionId`), NOT from `workflow_entity` table for execution.
+
+**Implications:**
+- Direct SQL updates to `workflow_entity` alone do NOT affect running workflows
+- Must update BOTH tables OR use n8n CLI/API for changes to take effect
+- This explains why "changes aren't working" after database updates
+
+**Document:** See KNOWLEDGE-BASE.md Section 1 for complete procedure
+
+### 5. Build Operations Agent ⭐ CRITICAL
 **Problem:** Claude Code requires constant permissions for operations
 **Solution:** Python orchestrator that makes decisions via Claude API, executes directly
 
@@ -130,13 +184,29 @@ Require confirmation: DELETE operations, DROP/TRUNCATE, service shutdowns, crede
 
 ## MEDIUM PRIORITY (Week 2)
 
-### 5. Email Configuration
+### 6. Google Tasks Credential ⭐ NEW
+**Issue:** Google Tasks API credential may need refresh or reconfiguration
+**Status:** Needs verification
+**Tasks:**
+- Test Google Tasks credential connectivity
+- Verify OAuth token refresh is working through Cloudflare Access bypass
+- Document credential expiration/rotation procedure
+**Related:** See Google OAuth Token Refresh item in Technical Debt (resolved)
+
+### 7. Separate ARIA vs PA Tool Routing
+**Issue:** Both ARIA and Personal Assistant share same tool workflows
+**Better:** Create ARIA-specific versions
+- 04-store-memory-aria.json (routes to aria_unified_memory)
+- 05-search-memory-aria.json (searches aria_unified_memory)
+- Allows different schemas and behavior per interface
+
+### 8. Email Configuration
 **Issue:** Supabase Auth pointing to non-existent mail server
 **Current:** Using autoconfirm workaround
 **Need:** Set up SMTP (Gmail, SendGrid, or AWS SES)
 **Impact:** Production auth requires real emails
 
-### 6. Storage Buckets for File Uploads
+### 9. Storage Buckets for File Uploads
 Need Supabase Storage buckets:
 - `chat-files` - General file uploads
 - `attachments` - Document attachments
@@ -144,7 +214,7 @@ Need Supabase Storage buckets:
 
 **Status:** Phase 2 feature (file uploads not implemented yet)
 
-### 7. GitHub Repo Management
+### 10. GitHub Repo Management
 **Issue:** Multiple repos, unclear remotes, tracking difficulties
 **Need:**
 - Audit all repos on server
@@ -152,7 +222,7 @@ Need Supabase Storage buckets:
 - Document what's where
 - Proper SSH key management for damonhess-dev account
 
-### 8. Credential Manager Agent
+### 11. Credential Manager Agent
 **Problem:** API keys, OAuth tokens, expiration dates scattered everywhere
 **Need:** Central tracking system
 - Inventory of all credentials
@@ -166,23 +236,25 @@ Need Supabase Storage buckets:
 
 ## LOW PRIORITY (Week 2-3)
 
-### 9. Backup Automation
-**Status:** Scripts created but not scheduled
-**Need:**
-- Cron job for daily backups
-- Test restore procedures
-- Verify backup integrity
+### 12. Backup Automation ✅ RESOLVED
+**Status:** COMPLETED - January 12, 2026
 
-**Time:** 30 minutes
+**Implemented:**
+- Daily backup script: `/home/damon/backup-daily.sh`
+- Cron job: `0 3 * * *` (3 AM daily)
+- Backup location: `/home/damon/backups/daily/`
+- Retention: 7 days (auto-cleanup)
+- Includes: Supabase ARIA tables, n8n workflows, credentials, config files
 
-### 10. Replace Code Nodes with Native Nodes
+**Documentation:** See KNOWLEDGE-BASE.md Section 11
+
+### 13. Replace Code Nodes with Native Nodes
 **Issue:** Using JavaScript Code nodes where native n8n nodes would be more stable
 **Where:** Input normalization, date parsing, output formatting
 **Why:** Native nodes = more stable, better error messages
 **Impact:** Long-term maintenance easier
-**Time:** 2-3 hours to rebuild all workflows
 
-### 11. Two-Way Google Tasks Sync
+### 14. Two-Way Google Tasks Sync
 **Current:** One-way (n8n → Google Tasks)
 **Need:** Bidirectional sync
 **Use case:** Updates in Google Tasks reflect in ARIA
@@ -191,18 +263,18 @@ Need Supabase Storage buckets:
 
 ## TECHNICAL DEBT
 
-### 12. n8n Workflow Versioning (DOCUMENTED)
+### 15. n8n Workflow Versioning (DOCUMENTED)
 **Discovery:** n8n uses `workflow_history` for execution, not `workflow_entity`
 **Root Cause:** SQL updates to `workflow_entity` don't update what n8n runs
 **Fix:** Must update BOTH `workflow_entity` AND `workflow_history` tables
 **Document:** See KNOWLEDGE-BASE.md Section 1 for complete fix
 
-### 13. Credential Resolution in Sub-Workflows
+### 16. Credential Resolution in Sub-Workflows
 **Issue:** Credentials sometimes fail to resolve in Execute Workflow Trigger scenarios
 **Workaround:** Use direct Postgres/HTTP nodes instead
 **Need:** Document pattern for future workflow building
 
-### 14. Batch Deletion of Same-Named Events (WORKAROUND IN PLACE)
+### 17. Batch Deletion of Same-Named Events (WORKAROUND IN PLACE)
 **Issue:** Deleting multiple events with same name (e.g., 12 "Test Event") fails
 **Root Cause:** Event selection always returns same event ID for matching names
 **Current Fix:** Random selection from duplicates using `Date.now() % length`
@@ -211,13 +283,21 @@ Need Supabase Storage buckets:
 **Priority:** Medium - workaround works, proper fix improves efficiency
 **Document:** See KNOWLEDGE-BASE.md Section 6 for details
 
-### 15. Google OAuth Token Refresh
+### 18. Google OAuth Token Refresh ✅ RESOLVED
 **Issue:** OAuth tokens expire and n8n's built-in refresh sometimes fails with Cloudflare Access
-**Current Fix:** Manual token injection via OAuth Playground
-**Better Fix:** Create bypass rule in Cloudflare Access for OAuth callback
+**Status:** FIXED - Cloudflare Access bypass rule configured (Jan 12, 2026)
+
+**Current Setup (Correct):**
+| Application | Domain/Path | Purpose |
+|-------------|-------------|---------|
+| `n8n` | `n8n.leveredgeai.com` | Protects n8n (requires login) |
+| `n8n OAuth Callback` | `n8n.leveredgeai.com/rest/oauth2-credential/callback` | Bypasses auth for OAuth |
+
+**Next Steps:** Test n8n's built-in OAuth "Connect" button next time credentials expire instead of using OAuth Playground workaround.
+
 **Document:** See KNOWLEDGE-BASE.md Sections 2-4 for complete procedures
 
-### 16. Storage Bucket Cleanup on Conversation Delete
+### 19. Storage Bucket Cleanup on Conversation Delete
 **Issue:** When conversations are archived/deleted, attachment files remain in Supabase Storage
 **Tables Affected:** `aria_attachments` records are deleted, but actual files in `chat-files` bucket persist
 **Current State:** No cleanup mechanism exists
@@ -234,7 +314,7 @@ Need Supabase Storage buckets:
 **Priority:** Low - not urgent until file uploads are heavily used
 **Document:** See KNOWLEDGE-BASE.md Section 10 for context
 
-### 17. n8n Chat Memory Cleanup
+### 20. n8n Chat Memory Cleanup
 **Issue:** n8n's `n8n_chat_histories` table not cleaned when ARIA conversations archived
 **Current State:** Orphaned session data accumulates
 **Solution:** Scheduled n8n workflow or manual periodic cleanup
@@ -244,7 +324,7 @@ Need Supabase Storage buckets:
 
 ## PHASE 2 FEATURES (Week 2-3)
 
-### 14. File Upload System
+### 21. File Upload System
 From ARIA-Comprehensive-Plan.md:
 - PDF processing with page-level citations
 - Image processing with vision API
@@ -252,13 +332,13 @@ From ARIA-Comprehensive-Plan.md:
 - Video processing (extract audio + frames)
 - Workflow: 18-file-processor
 
-### 15. Telegram Interface
+### 22. Telegram Interface
 - Bot creation and token
 - Webhook setup
 - Cross-interface continuity
 - Workflow: 17-telegram-interface
 
-### 16. Unified Memory Consolidation
+### 23. Unified Memory Consolidation
 - Extract facts/preferences from conversations
 - Store in aria_unified_memory
 - Semantic search across all conversations

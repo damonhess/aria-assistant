@@ -78,7 +78,7 @@ export function Sidebar() {
       animate={{ x: 0 }}
       exit={{ x: -280 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="w-80 h-full bg-card/30 backdrop-blur-xl border-r border-border/50 flex flex-col"
+      className="w-[85vw] max-w-80 h-full bg-card/30 backdrop-blur-xl border-r border-border/50 flex flex-col"
     >
       <div className="p-4 space-y-4">
         <Button
@@ -154,7 +154,7 @@ export function Sidebar() {
                           </div>
                           <button
                             onClick={(e) => handleDeleteClick(e, conv.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity p-1 -m-1"
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                           </button>

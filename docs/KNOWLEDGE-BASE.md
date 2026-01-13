@@ -1,6 +1,6 @@
 # ARIA Knowledge Base - Lessons Learned & Solutions
 
-*Last Updated: January 12, 2026 (Added Section 10: Conversation Deletion & Cleanup)*
+*Last Updated: January 13, 2026 (Added Section 12: Dev/Prod Environment Separation)*
 
 This document captures hard-won knowledge from debugging sessions. Use it to avoid repeating mistakes and to quickly solve recurring issues.
 
@@ -18,6 +18,8 @@ This document captures hard-won knowledge from debugging sessions. Use it to avo
 8. [n8n AI Agent Tool Registration](#8-n8n-ai-agent-tool-registration)
 9. [ARIA Database Schema Conventions](#9-aria-database-schema-conventions)
 10. [Conversation Deletion & Cleanup](#10-conversation-deletion--cleanup)
+11. [Automated Daily Backups](#11-automated-daily-backups)
+12. [Dev/Prod Environment Separation](#12-devprod-environment-separation)
 
 ---
 
@@ -91,29 +93,166 @@ Cloudflare Access (Zero Trust) intercepts the OAuth callback URL (`/rest/oauth2-
 1. The callback comes from Google's servers, not the user's browser
 2. No Cloudflare Access JWT token is present in the callback request
 
-### The Fix
-Create a bypass rule in Cloudflare Access for the OAuth callback path:
+### Your n8n OAuth Callback URL
+Based on your n8n configuration:
+```
+https://n8n.leveredgeai.com/rest/oauth2-credential/callback
+```
 
-1. Go to Cloudflare Zero Trust Dashboard → Access → Applications
-2. Create a new application with these settings:
-   - **Name:** n8n OAuth Callback Bypass
-   - **Type:** Self-hosted
-   - **Application domain:** `your-n8n-domain.com`
+This is determined by `N8N_EDITOR_BASE_URL` + `/rest/oauth2-credential/callback`.
+
+### The Fix: Create Cloudflare Access Bypass Rule
+
+**Step-by-Step Instructions:**
+
+1. **Log into Cloudflare Zero Trust Dashboard**
+   - Go to: https://one.dash.cloudflare.com/
+   - Select your account
+
+2. **Navigate to Access Applications**
+   - Left sidebar: Access → Applications
+   - Click "Add an application"
+
+3. **Configure Application Settings**
+   - **Application type:** Self-hosted
+   - Click "Select"
+
+4. **Application Configuration**
+   - **Application name:** `n8n OAuth Callback Bypass`
+   - **Session Duration:** 24 hours (or your preference)
+   - **Application domain:** `n8n.leveredgeai.com`
    - **Path:** `/rest/oauth2-credential/callback`
-   - **Policy:** Create a policy that allows everyone (Bypass)
 
-**Policy Configuration:**
-- Policy name: Allow OAuth Callbacks
-- Action: Bypass
-- Include: Everyone
+   > ⚠️ The path MUST be exactly `/rest/oauth2-credential/callback` - no trailing slash
 
-### Alternative: Use OAuth Playground
+5. **Add Policy**
+   - Click "Add policy"
+   - **Policy name:** `Bypass OAuth Callbacks`
+   - **Action:** `Bypass`
+   - **Session duration:** Leave default
+
+   **Configure rules:**
+   - **Include:** `Everyone`
+
+   > This allows any request to this specific path without authentication
+
+6. **Save Application**
+   - Click "Add application"
+   - The bypass is now active
+
+### You Need BOTH Applications
+
+Your Cloudflare Access should have TWO n8n applications:
+
+| Application | Domain/Path | Purpose |
+|-------------|-------------|---------|
+| `n8n` | `n8n.leveredgeai.com` | Protects entire n8n instance (requires login) |
+| `n8n OAuth Callback` | `n8n.leveredgeai.com/rest/oauth2-credential/callback` | Bypasses auth for OAuth callback only |
+
+**Why both?**
+- Without `n8n`: Anyone can access your n8n instance without authentication
+- Without `n8n OAuth Callback`: Google's OAuth callback is blocked, breaking credential refresh
+
+### Policy Order Matters!
+
+The bypass application MUST be:
+- **More specific** (path-based) than the general application
+- **Higher priority** if both are at the same specificity level
+
+To check/adjust order:
+1. Go to Access → Applications
+2. Drag applications to reorder (more specific rules first)
+3. The OAuth Callback Bypass should appear BEFORE the general `n8n.leveredgeai.com` application
+
+### Verification Steps
+
+After creating the bypass rule:
+
+1. **Test the callback URL directly:**
+   ```bash
+   curl -I https://n8n.leveredgeai.com/rest/oauth2-credential/callback
+   ```
+   - Should return HTTP 400 or 404 (n8n error), NOT a Cloudflare Access login page
+   - If you see `cf-access-authenticated` or redirect to login, bypass isn't working
+
+2. **Test OAuth flow in n8n:**
+   - Go to n8n credentials
+   - Create/edit a Google OAuth credential
+   - Click "Connect"
+   - Complete Google authorization
+   - Should return to n8n with "Account Connected"
+
+3. **Check Cloudflare Access Logs:**
+   - Zero Trust Dashboard → Logs → Access Logs
+   - Look for requests to `/rest/oauth2-credential/callback`
+   - Should show "Allowed" with policy "Bypass OAuth Callbacks"
+
+### Security Considerations
+
+**Risk:** The bypass allows ANY request to the callback URL without authentication.
+
+**Mitigations:**
+1. **Path is specific** - Only `/rest/oauth2-credential/callback` is bypassed
+2. **n8n validates state** - OAuth state parameter prevents CSRF
+3. **Tokens are tied to session** - OAuth callback requires a valid n8n session in progress
+4. **No sensitive data exposed** - Callback only processes OAuth tokens, not user data
+
+**If you're concerned:**
+- Restrict bypass to specific IP ranges (Google's OAuth servers)
+- Add a WAF rule to validate OAuth state parameter presence
+- Enable logging to monitor for abuse
+
+### Alternative: Cloudflare API / Terraform
+
+**Via Cloudflare API:**
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/accounts/{account_id}/access/apps" \
+  -H "Authorization: Bearer {api_token}" \
+  -H "Content-Type: application/json" \
+  --data '{
+    "name": "n8n OAuth Callback Bypass",
+    "domain": "n8n.leveredgeai.com/rest/oauth2-credential/callback",
+    "type": "self_hosted",
+    "session_duration": "24h",
+    "policies": [{
+      "name": "Bypass OAuth Callbacks",
+      "decision": "bypass",
+      "include": [{"everyone": {}}]
+    }]
+  }'
+```
+
+**Via Terraform:**
+```hcl
+resource "cloudflare_access_application" "n8n_oauth_bypass" {
+  account_id       = var.cloudflare_account_id
+  name             = "n8n OAuth Callback Bypass"
+  domain           = "n8n.leveredgeai.com/rest/oauth2-credential/callback"
+  type             = "self_hosted"
+  session_duration = "24h"
+}
+
+resource "cloudflare_access_policy" "bypass_oauth" {
+  account_id     = var.cloudflare_account_id
+  application_id = cloudflare_access_application.n8n_oauth_bypass.id
+  name           = "Bypass OAuth Callbacks"
+  decision       = "bypass"
+  precedence     = 1
+
+  include {
+    everyone = true
+  }
+}
+```
+
+### Fallback: Use OAuth Playground
 If you can't modify Cloudflare Access, use Google's OAuth Playground to obtain tokens manually (see Section 3).
 
 ### Symptoms of This Issue
 - OAuth flow works up until the final callback
 - User sees "Account Connected" flash briefly, then error
 - n8n logs show no incoming callback request
+- Browser redirects to Cloudflare Access login after Google "Allow"
 - Cloudflare Access logs show blocked request to callback URL
 
 ---
@@ -662,6 +801,75 @@ DELETE FROM aria_conversations WHERE id = 'CONVERSATION_UUID';
 
 ---
 
+## 11. Automated Daily Backups
+
+### Overview
+Daily automated backups run at 3 AM via cron, backing up:
+- Supabase database (ARIA tables + application data)
+- n8n database (workflows, credentials, executions)
+- Configuration files (docker-compose, Caddyfile, .env files)
+
+### Backup Script
+**Location:** `/home/damon/backup-daily.sh`
+
+**What it backs up:**
+| Component | Tables/Files | Output File |
+|-----------|--------------|-------------|
+| Supabase ARIA | aria_*, tasks, decisions, launch_*, patterns, context | supabase_aria.sql |
+| n8n | workflow_entity, workflow_history, credentials_entity, execution_entity | n8n_full.sql |
+| Workflows JSON | Human-readable workflow export | workflows.json |
+| Config | docker-compose.yml, Caddyfile, .env files | config/ |
+
+### Backup Location & Retention
+- **Directory:** `/home/damon/backups/daily/`
+- **Format:** `YYYY-MM-DD.tar.gz`
+- **Retention:** 7 days (older backups auto-deleted)
+- **Log:** `/home/damon/backups/backup.log`
+
+### Cron Schedule
+```
+0 3 * * * /home/damon/backup-daily.sh >> /home/damon/backups/cron.log 2>&1
+```
+
+### Manual Backup
+```bash
+# Run backup manually
+/home/damon/backup-daily.sh
+
+# Check backup log
+cat /home/damon/backups/backup.log
+
+# List current backups
+ls -lh /home/damon/backups/daily/
+```
+
+### Restore from Backup
+```bash
+# Extract backup
+cd /home/damon/backups/daily
+tar -xzf 2026-01-12.tar.gz
+
+# Restore Supabase
+docker exec -i supabase-db psql -U postgres -d postgres < 2026-01-12/supabase_aria.sql
+
+# Restore n8n
+docker exec -i n8n-postgres psql -U n8n -d n8n < 2026-01-12/n8n_full.sql
+
+# Restart services
+docker restart n8n
+```
+
+### Verify Backup Integrity
+```bash
+# Check archive integrity
+tar -tzf /home/damon/backups/daily/2026-01-12.tar.gz
+
+# View manifest
+tar -xzf 2026-01-12.tar.gz -O 2026-01-12/manifest.json | jq .
+```
+
+---
+
 ## Quick Reference: Common Commands
 
 ### Restart n8n and check logs
@@ -699,6 +907,151 @@ curl -s "https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResu
 ```bash
 curl -s "http://supabase-kong:8000/rest/v1/your_table?select=*&limit=1" \
   -H "apikey: YOUR_SERVICE_ROLE_KEY"
+```
+
+---
+
+## 12. Dev/Prod Environment Separation
+
+### Overview
+
+As of January 13, 2026, ARIA uses separate development and production n8n environments to prevent accidental breakage of working production workflows.
+
+### Environment URLs
+
+| Environment | URL | Database | Purpose |
+|-------------|-----|----------|---------|
+| **Production** | n8n.leveredgeai.com | `n8n` | Stable, user-facing ARIA |
+| **Development** | dev.n8n.leveredgeai.com | `n8n_dev` | Experimentation, new features |
+| **ARIA Frontend** | aria.leveredgeai.com | Supabase (shared) | Web chat interface |
+
+### Architecture
+
+```
+YOUR LAPTOP                          CONTABO VPS (Remote Server)
+├── Claude Desktop (coach)           ├── n8n (PROD) → n8n.leveredgeai.com
+├── VS Code + Claude Code ──SSH──────┼── n8n-dev (DEV) → dev.n8n.leveredgeai.com
+├── Browser                          ├── Supabase (shared)
+└── Terminal                         ├── Caddy (reverse proxy)
+                                     └── Postgres
+                                         ├── n8n (prod database)
+                                         └── n8n_dev (dev database)
+```
+
+### Server Resources (as of Jan 13, 2026)
+
+| Resource | Total | Used | Available |
+|----------|-------|------|-----------|
+| CPU | 8 cores (AMD EPYC) | ~20% | 80% |
+| RAM | 24 GB | 11 GB | **12 GB** |
+| Disk | 387 GB | 57 GB | 330 GB |
+| Containers | 33 running | - | - |
+
+**Capacity:** Full dev stack (Supabase + n8n) is viable with 12 GB available RAM.
+
+### Golden Rules
+
+1. **If ARIA is working on prod, DON'T TOUCH PROD**
+2. **All development happens on dev.n8n.leveredgeai.com**
+3. **Test thoroughly before promoting**
+4. **Always backup before major changes**
+
+### Workflow Promotion Process
+
+**From Dev → Prod:**
+
+1. Export workflow from dev.n8n.leveredgeai.com (... menu → Export)
+2. Download JSON file
+3. Import to n8n.leveredgeai.com (prod)
+4. Activate workflow
+5. Test on production
+
+**Via API:**
+```bash
+# Export from dev
+curl -X GET "https://dev.n8n.leveredgeai.com/api/v1/workflows/[ID]" \
+  -H "X-N8N-API-KEY: $DEV_API_KEY" > workflow.json
+
+# Import to prod
+curl -X POST "https://n8n.leveredgeai.com/api/v1/workflows" \
+  -H "X-N8N-API-KEY: $PROD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @workflow.json
+```
+
+### Docker Management
+
+```bash
+# Check both instances
+docker ps | grep n8n
+
+# View dev logs
+docker logs n8n-dev --tail 100 -f
+
+# Restart dev (safe - doesn't affect prod)
+docker restart n8n-dev
+
+# Stop/start dev
+docker stop n8n-dev && docker start n8n-dev
+```
+
+### Database Access
+
+```bash
+# Connect to prod database
+docker exec -it n8n-postgres psql -U n8n -d n8n
+
+# Connect to dev database
+docker exec -it n8n-postgres psql -U n8n -d n8n_dev
+
+# List both databases
+docker exec n8n-postgres psql -U n8n -d postgres -c "\l" | grep n8n
+```
+
+### Credential Isolation
+
+**Critical:** Dev and prod n8n instances do NOT share credentials.
+
+When setting up dev, you must add:
+| Credential Type | Required For |
+|-----------------|--------------|
+| `openAiApi` | AI Agent (any workflow) |
+| `postgres` | Supabase database access |
+| `googleCalendarOAuth2Api` | Calendar features |
+| `supabaseApi` | Supabase REST API |
+
+### Backup Locations
+
+| Type | Location |
+|------|----------|
+| Stable baseline | `/home/damon/aria-assistant/backups/stable-2026-01-13/` |
+| MCP troubleshooter | `/tmp/n8n_backups/` |
+| Daily automated | `/home/damon/backups/daily/` |
+
+### Detailed Documentation
+
+See: [DEV-PROD-WORKFLOW.md](./DEV-PROD-WORKFLOW.md) for complete development workflow guide.
+
+### Symptoms of Working in Wrong Environment
+
+- Changes don't appear after saving (you're editing dev, testing prod)
+- "Credential not found" errors (credentials not set up in dev)
+- ARIA stops responding (you broke prod instead of dev)
+- Webhook URLs return 404 (wrong domain in workflow config)
+
+### Emergency Rollback
+
+If production is broken:
+
+```bash
+# 1. List available backups
+ls /home/damon/aria-assistant/backups/stable-2026-01-13/
+
+# 2. Use n8n-troubleshooter MCP to restore
+# Via Claude Code: use restore_workflow tool with backup_id
+
+# 3. Or manual restore via n8n UI
+# Import the JSON file directly in n8n.leveredgeai.com
 ```
 
 ---
