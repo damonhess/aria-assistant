@@ -37,3 +37,4 @@ temp/
 backups/
 *.backup
 *.bak
+__pycache__/

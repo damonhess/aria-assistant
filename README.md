@@ -91,10 +91,84 @@ aria-assistant/
 │   └── migrations/
 │       ├── 001_aria_schema.sql              # Core ARIA tables
 │       ├── 002_aria_frontend_support.sql    # Frontend compatibility views
-│       └── 003_consolidate_pa_to_aria.sql   # PA schema consolidation
+│       ├── 003_consolidate_pa_to_aria.sql   # PA schema consolidation
+│       └── 004_aria_reminders.sql           # Reminders system
+├── utils/
+│   ├── time_context.py    # Time awareness utilities
+│   ├── reminders.py       # Reminder management class
+│   └── reminder-cli.sh    # CLI wrapper for reminder ops
 ├── docs/                  # Documentation
 └── MIGRATION_PLAN.md      # Schema consolidation guide
 ```
+
+## Time Awareness & Reminders
+
+ARIA includes a sophisticated time awareness system that provides contextual temporal information and a full-featured reminder management system.
+
+### Time Context
+
+The time context system automatically injects temporal awareness into ARIA's system prompt:
+
+```python
+from utils.time_context import TimeContext
+
+tc = TimeContext()
+context = tc.get_time_context()
+# Returns: "Current time: Wednesday, January 15, 2026 at 2:30 PM PST
+#           Week 3 of 2026 | Day 15 of 365"
+```
+
+**Features:**
+- Current date/time with timezone
+- Day of week, week number, day of year
+- Natural language time parsing ("tomorrow at 3pm", "next Friday")
+
+### Reminders System
+
+ARIA can set, manage, and proactively check reminders:
+
+| Tool | Description |
+|------|-------------|
+| `create_reminder` | Create a new reminder with optional recurrence |
+| `list_reminders` | List all pending reminders |
+| `complete_reminder` | Mark a reminder as done |
+| `delete_reminder` | Remove a reminder |
+| `check_due_reminders` | Get reminders due now (for proactive notifications) |
+
+**Reminder Schema:**
+```sql
+aria_reminders (
+  id UUID PRIMARY KEY,
+  user_id TEXT DEFAULT 'damon',
+  reminder_text TEXT NOT NULL,
+  remind_at TIMESTAMPTZ NOT NULL,
+  completed BOOLEAN DEFAULT FALSE,
+  recurrence TEXT,  -- 'daily', 'weekly', 'monthly', 'yearly'
+  priority TEXT,    -- 'low', 'normal', 'high', 'urgent'
+  category TEXT,
+  context JSONB,
+  created_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ
+)
+```
+
+**CLI Usage:**
+```bash
+# Create a reminder
+./utils/reminder-cli.sh create "Call dentist" "tomorrow at 9am"
+
+# List pending reminders
+./utils/reminder-cli.sh list
+
+# Check due reminders (for n8n polling)
+./utils/reminder-cli.sh check-due
+
+# Complete a reminder
+./utils/reminder-cli.sh complete <uuid>
+```
+
+**n8n Integration:**
+The reminders system integrates with n8n workflows through the system prompt tools. ARIA can be prompted to check for due reminders at the start of conversations and proactively notify users.
 
 ## Database Migrations
 
@@ -108,6 +182,9 @@ psql -f supabase/migrations/002_aria_frontend_support.sql
 
 # 3. PA consolidation (migrates conversations)
 psql -f supabase/migrations/003_consolidate_pa_to_aria.sql
+
+# 4. Reminders system
+psql -f supabase/migrations/004_aria_reminders.sql
 ```
 
 ## Documentation
